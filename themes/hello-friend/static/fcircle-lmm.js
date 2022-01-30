@@ -1,6 +1,6 @@
 /*
-Last Modified time : 20220128 23:34 by https://immmmm.com
-基于 FriendCircle API v4.1.1 
+Last Modified time : 20220130 00:14 by https://immmmm.com
+基于 FriendCircle API v4.1.2
 */
 var fdata = {
   apiurl: 'https://hexo-friendcircle-api-nine.vercel.app/api',
@@ -20,6 +20,7 @@ var container = document.getElementById('fcircleContainer');
 var createdBtn = document.getElementById('createdBtn')
 var updatedBtn = document.getElementById('updatedBtn')
 var local_sortNow = localStorage.getItem("sortNow")
+var article_num = ''
 if(local_sortNow){
   sortNow = local_sortNow
 }else{
@@ -36,6 +37,7 @@ function quickSort(arr, keyword){
 }
 // 打印基本信息
 function loadStatistical(sdata){
+  article_num = sdata.article_num
   var messageBoard =`
   <div id="fMessageBoard" class="fNewDiv">
     <div class="fMessageItem">
@@ -72,13 +74,18 @@ function loadStatistical(sdata){
 // 打印友链信息和内容
 function loadArticleItem(datalist,start,end){
   var articleItem = '';
-  for (var i = start;i<end;i++){
-    var item = datalist[i];
-    articleItem +=`
-    <div class="fArticleItem">
+  var articleNum = article_num;
+  var endFor = end
+  if(end > articleNum){endFor = articleNum}
+  if(start < articleNum){
+    for (var i = start;i<endFor;i++){
+      var item = datalist[i];
+      articleItem +=`
+      <div class="fArticleItem">
       <div class="fArticleMessage">
         <a class="fArticleTitle"  href="${item.link}" target="_blank" rel="noopener nofollow" data-title="${item.title}">${item.title}</a>
-        <div class="fArticleAvatar">
+        <span class="fArticleFloor">${i+1}</span>
+        <div class="fArticleAvatar flink-item-icon">
           <img class="fArticlelink fAvatar avatar" src="${item.avatar}" alt="avatar" onerror="this.src='${fdata.error_img}'; this.onerror = null;">
           <a class="" target="_blank" rel="noopener nofollow" href="${item.link}"><span class="fArticleAuthor">${item.author}</span></a>
           <span class="fArticleTime">
@@ -87,11 +94,14 @@ function loadArticleItem(datalist,start,end){
           </span>
         </div>
       </div>
-    </div>
-    `;
-  }
-  if(container){
-    container.insertAdjacentHTML('beforeend', articleItem);
+      </div>
+      `;
+    }
+    if(container){
+      container.insertAdjacentHTML('beforeend', articleItem);
+    }
+  }else{
+    document.getElementById('fcircleMoreBtn').outerHTML = `<div id="fcircleMoreBtn" class="fNewDiv" onclick="loadNoArticle()"><small>一切皆有尽头！</small></div>`
   }
 }
 // 加载更多文章
@@ -104,6 +114,15 @@ function loadMoreArticle(){
   }else{
     loadArticleItem(createdList,currentArticle,currentArticle + fdata.stepnumber)
   }
+}
+// 没有更多文章
+function loadNoArticle(){
+  localStorage.removeItem("createdList")
+  localStorage.removeItem("updatedList")
+  localStorage.removeItem("statisticalData")
+  localStorage.removeItem("sortNow")
+  document.getElementById('fcircleMoreBtn').remove()
+  window.scrollTo(0,document.getElementsByClassName('fMessageBoard').offsetTop)
 }
 //切换按钮
 function changeSort(event){
@@ -135,18 +154,18 @@ function FetchFriendCircle(sortNow,egg){
       }else{
         loadArticleItem(article_sortcreated ,0,fdata.initnumber)
       }
-      localStorage.setItem("statisticalList",JSON.stringify(statistical_data))
+      localStorage.setItem("statisticalData",JSON.stringify(statistical_data))
       localStorage.setItem("createdList",JSON.stringify(article_sortcreated))
       localStorage.setItem("updatedList",JSON.stringify(article_sortupdated))
     })
 }
 // 初始化方法
 function initFriendCircle(sortNow){
-    var statisticalList = JSON.parse(localStorage.getItem("statisticalList"));
+    var statisticalData = JSON.parse(localStorage.getItem("statisticalData"));
     var createdList = JSON.parse(localStorage.getItem("createdList"));
     var updatedList = JSON.parse(localStorage.getItem("updatedList"));
-    if(statisticalList && updatedList && createdList){
-      loadStatistical(statisticalList);
+    if(statisticalData && updatedList && createdList){
+      loadStatistical(statisticalData);
       if(sortNow == 'updated'){
         loadArticleItem(updatedList ,0,fdata.initnumber)
         console.log("updated 本地数据，更新排序")
@@ -176,7 +195,7 @@ function initFriendCircle(sortNow){
         }else{
           console.log("API数据未更新")
         }
-        localStorage.setItem("statisticalList",JSON.stringify(statistical_data))
+        localStorage.setItem("statisticalData",JSON.stringify(statistical_data))
         localStorage.setItem("createdList",JSON.stringify(article_sortcreated))
         localStorage.setItem("updatedList",JSON.stringify(article_sortupdated))
       })
